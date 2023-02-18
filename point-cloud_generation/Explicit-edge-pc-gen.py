@@ -14,6 +14,7 @@ from skimage import measure
 vertices = []
 edges = []
 faces = []
+vert_count = 0
 
 # Fixed constants.
 degrees_offset = 6
@@ -22,12 +23,14 @@ blend_const = 0.0651084055
 
 # Directory to cross-sections.
 dirname = os.path.dirname(__file__)
-filename = os.path.join(dirname, '../data/cross-sections')
+file_path = os.path.join(dirname, '../data/cross-sections')
+
+
+
 
 def identify_verticies(f_directory, pool_check, pool_resolution):
 
     # Keep track of the number of vertices per cross-section
-    prev_cross_section = 0
 
     # Traverse through all images in the f_directory.
     for img_name in os.listdir(f_directory):
@@ -47,27 +50,23 @@ def identify_verticies(f_directory, pool_check, pool_resolution):
         
         # Gather image metrics
         width = img[0].size - 2
-        height = (img.size / width) - 2 
+        height = (img.size / width) - (2 + 50)
         u_origin = ((width + 1) // 2, (height + 1) // 2)
         img_num = int(img_name[len(img_name) - 5])
 
         # Keep track of current cross-section as well as average previous differences in z value
         curr_cross_section = 0
         
-
         # Traverse through individual pixels of image, not including border pixels.
         for u in width:
             for v in height:
-
                 # Check if pixel is an edge
-                if img[u-1][v] != img[u+1][v] or img[u][v+1] !=  img[u][v-1]:
+                if img[u-1][v] != img[u+1][v] and (curr_cross_section <= vert_count or vert_count == 0):
                     add_verticies(u, v, u_origin, img_num)
-                    curr_cross_section += 1
+                    curr_cross_section += 1 
 
-                    for prev_vert in vertices[len(vertices) - (prev_cross_section + 1)]:
-                        if prev_vert[2] = 
-
-        prev_cross_section = curr_cross_section
+        if vert_count == 0:
+            vert_count = curr_cross_section
 
 
 def add_verticies(u_real, v_real, origin, img_num):
@@ -84,6 +83,17 @@ def add_verticies(u_real, v_real, origin, img_num):
     # Append vertice
     vertices.append((x, y, z))
 
+def gen_edges():
+
+    vert_length = len(vertices)
+
+    # Create edges between geometrically adjacent verticies
+    for index in range(0, vert_length, vert_count):
+        if index >= (len(vertices) - vert_count):
+            edges.append((vertices[index], vertices[index - (vert_length - vert_count)]))
+        else:
+            edges.append((vertices[index], vertices[index + vert_count]))
+
 def gen_model():
 
     # Create Mesh
@@ -95,6 +105,13 @@ def gen_model():
     new_object = bpy.data.objects.new("new_object", new_mesh)
     view_layer = bpy.context.view_layer
     view_layer.active_layer_collection.collection.objects.link(new_object)
+
+
+# main code
+
+identify_verticies(file_path, 0, None)
+gen_edges()
+gen_model()
 
 
 
