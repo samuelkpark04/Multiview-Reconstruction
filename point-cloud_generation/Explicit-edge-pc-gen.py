@@ -49,8 +49,8 @@ def identify_verticies(f_directory, pool_check, pool_resolution):
             img = skimage.measure.block_reduce(img, (pool_resolution, pool_resolution), np.max)
         
         # Gather image metrics
-        width = img[0].size - 2
-        height = (img.size / width) - (2 + 50)
+        width = img[0].size - 3
+        height = (img.size / width) - (3 + 50)
         u_origin = ((width + 1) // 2, (height + 1) // 2)
         img_num = int(img_name[len(img_name) - 5])
 
