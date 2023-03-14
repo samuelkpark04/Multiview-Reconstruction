@@ -15,6 +15,7 @@ import re
 vertices = []
 edges = []
 faces = []
+countVert = []
 degrees = 6
 count = 0
 blendconst = 0.0651084055
@@ -33,7 +34,7 @@ for filename in os.listdir(directory):
     image[image != 0] = 1
     #pooling operation is optional for performance
     image = skimage.measure.block_reduce(image, (16, 16), np.max)
-    
+    currCount = 0
     #convert non edge pixels to 0.5 or gray
     for r in range(int(image.size / image[0].size) - 1):
         for c in range(image[0].size - 1):
@@ -59,6 +60,7 @@ for filename in os.listdir(directory):
                     ym = ((image.size / image[0].size - r) * 0.0065) / 185.324
                     ytrue = ym / blendconst
                     vertices.append((xtrue, 0, ytrue))
+                    currCount += 1
                      
     else:
         #all other images need to be rotated by their angular offset
@@ -79,14 +81,50 @@ for filename in os.listdir(directory):
                     zm = ((image.size / image[0].size - r) * 0.0065) / 185.324
                     ztrue = zm / blendconst
                     vertices.append((xtrue, ytrue, ztrue))
+                    currCount += 1
     avg.append(count)
+    countVert.append(currCount)
 #get average number of vertices per image
 sum = 0
 for x in avg:
     sum += x
-print(sum / len(avg))
+print(sum / len(avg))       
+print(len(vertices))
 
-#create mesh
+sortVert = []
+
+def indexVert():
+    vertIndex = 0
+    tempVert = []
+    for i in range(len(countVert)):
+        for j in range(countVert[i]):
+            tempVert.append(vertices[vertIndex])
+            vertIndex += 1
+        sortVert.append(tempVert)
+        tempVert = []
+
+def createEdge():
+    for i in range(len(sortVert)):
+        if i == (len(sortVert) - 1):
+            mapEdge(sortVert[i], sortVert[0])
+        else:
+            mapEdge(sortVert[i], sortVert[i+1])
+
+def mapEdge(vert1, vert2):  
+
+    for i in range(min(len(vert1), len(vert2))):
+        edges.append(vert1[i], vert2[i])    
+    if len(vert1) < len(vert2):
+        for i in range(len(vert2)-len(vert1)):
+            edges.append(vert1[len(vert1-1)], vert2[len(vert1-1) + (1 + i)])
+    else:
+        for i in range(len(vert1) - len(vert2)):
+            edges.append(vert2[len(vert2)-1], vert1[len(vert2)-1] + (1 + i))
+    
+
+indexVert()
+createEdge()
+
 new_mesh=bpy.data.meshes.new("new_mesh")
 new_mesh.from_pydata(vertices, edges, faces)
 new_mesh.update()
@@ -96,5 +134,3 @@ new_object = bpy.data.objects.new("new_object", new_mesh)
 
 view_layer = bpy.context.view_layer
 view_layer.active_layer_collection.collection.objects.link(new_object)
-        
-print(len(vertices))

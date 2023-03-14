@@ -49,7 +49,7 @@ def identify_verticies(f_directory, pool_check, pool_resolution):
             img = skimage.measure.block_reduce(img, (pool_resolution, pool_resolution), np.max)
         
         # Gather image metrics
-        width = img[0].size - 3
+        width = img[0].size - 1
         height = (img.size / width) - (3 + 50)
         u_origin = ((width + 1) // 2, (height + 1) // 2)
         img_num = int(img_name[len(img_name) - 5])
@@ -78,7 +78,7 @@ def add_verticies(u_real, v_real, origin, img_num):
     # Calculate relative x, y, z coordinates
     x = r * cos(math.radians(deg)) * 0.0065 / 185.324
     y = r * sin(math.radians(deg)) * 0.0065 / 185.324
-    z = (v_real - origin) * 0.0065 / 185.324
+    z = (v_real - origin[1]) * 0.0065 / 185.324
 
     # Append vertice
     vertices.append((x, y, z))
@@ -110,7 +110,6 @@ def gen_model():
 # main code
 
 identify_verticies(file_path, 0, None)
-gen_edges()
 gen_model()
 
 
